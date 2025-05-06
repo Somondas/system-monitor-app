@@ -67,17 +67,17 @@ ipcMain.handle("get-system-stats", async () => {
 
 // >> get disk info
 ipcMain.handle("get-disk-info", async () => {
-  const rootPath = os.platform() === "win32" ? "C:" : "/";
-
   try {
-    const { available, free, total } = await disk.check(rootPath);
+    const data = await si.fsSize();
+    const root = data[0];
     return {
-      available,
-      free,
-      total,
+      total: root.size,
+      used: root.used,
+      available: root.size - root.used,
+      mount: root.mount,
     };
-  } catch (error) {
-    console.error("Disk check failed:", error);
+  } catch (err) {
+    console.error("Disk info failed:", err);
     return { error: true };
   }
 });

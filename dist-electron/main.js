@@ -17412,6 +17412,21 @@ ipcMain.handle("get-system-stats", async () => {
     usedMem: mem2.used
   };
 });
+ipcMain.handle("get-disk-info", async () => {
+  try {
+    const data = await si.fsSize();
+    const root = data[0];
+    return {
+      total: root.size,
+      used: root.used,
+      available: root.size - root.used,
+      mount: root.mount
+    };
+  } catch (err) {
+    console.error("Disk info failed:", err);
+    return { error: true };
+  }
+});
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
