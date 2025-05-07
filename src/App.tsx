@@ -4,6 +4,7 @@ import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { formatBytes } from "./utils";
 import ProgressBar from "@ramonak/react-progress-bar";
+import CountUp from "react-countup";
 
 function App() {
   const [stats, setStats] = useState({
@@ -19,6 +20,14 @@ function App() {
     mount: 0,
   });
 
+  const [fileCounts, setFileCounts] = useState({
+    Documents: 0,
+    Downloads: 0,
+    Pictures: 0,
+    Music: 0,
+  });
+
+  // Fetch Disk Info
   useEffect(() => {
     const getDisk = async () => {
       try {
@@ -31,6 +40,7 @@ function App() {
     getDisk();
   }, []);
 
+  // Fetch CPU + Memory Stats
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -44,16 +54,31 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch File Counts
+  useEffect(() => {
+    const getFileCounts = async () => {
+      try {
+        const counts = await window.ipcRenderer.invoke(
+          "get-folder-file-counts"
+        );
+        setFileCounts(counts);
+      } catch (error) {
+        console.error("Error fetching file counts:", error);
+      }
+    };
+    getFileCounts();
+  }, []);
+
   const memPercent = (stats.usedMem / stats.totalMem) * 100;
   const diskSpace = ((diskInfo.used / diskInfo.total) * 100).toFixed(1);
 
   return (
     <div
-      className="w-screen h-screen flex flex-col items-center justify-center gap-12 text-white px-6"
+      className="w-screen h-screen flex flex-col items-center justify-center gap-12 text-white px-6 overflow-y-auto"
       style={{ backgroundColor: BG_BLACK }}
     >
       {/* CPU + Memory */}
-      <div className="flex gap-16">
+      <div className="flex gap-16 flex-wrap justify-center">
         {/* Memory */}
         <div className="flex flex-col items-center gap-3">
           <div className="w-56 h-56">
@@ -99,13 +124,33 @@ function App() {
           completed={Math.round(parseFloat(diskSpace))}
           maxCompleted={100}
           height="20px"
-          labelAlignment="outside"
           labelColor="#fff"
+          animateOnRender
         />
         <p className="text-gray-400 text-sm mt-1">
           Disk Usage: {diskSpace}% | Total: {formatBytes(diskInfo.total)} GB |
           Free: {formatBytes(diskInfo.available)} GB
         </p>
+      </div>
+
+      {/* File Count Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-5xl">
+        {[
+          { label: "Downloads", value: fileCounts.Downloads },
+          { label: "Documents", value: fileCounts.Documents },
+          { label: "Pictures", value: fileCounts.Pictures },
+          { label: "Music", value: fileCounts.Music },
+        ].map(({ label, value }) => (
+          <div
+            key={label}
+            className="bg-gradient-to-br from-purple-800 to-purple-900 border border-purple-600 shadow-xl rounded-2xl p-6 flex flex-col items-center justify-center hover:scale-105 transition-transform duration-300"
+          >
+            <p className="text-gray-300 text-sm mb-2 tracking-wide">{label}</p>
+            <h1 className="text-5xl font-bold text-white">
+              <CountUp end={value} duration={2} />
+            </h1>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -17427,6 +17427,21 @@ ipcMain.handle("get-disk-info", async () => {
     return { error: true };
   }
 });
+ipcMain.handle("get-folder-file-counts", async () => {
+  const baseDir = path$3.join(require$$0$1.homedir());
+  const folders = ["Downloads", "Documents", "Pictures", "Music"];
+  const counts = {};
+  for (const folder of folders) {
+    const fullPath = path$3.join(baseDir, folder);
+    try {
+      const files = require$$1$1.readdirSync(fullPath, { withFileTypes: true });
+      counts[folder] = files.filter((f) => f.isFile()).length;
+    } catch (error) {
+      counts[folder] = 0;
+    }
+  }
+  return counts;
+});
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();

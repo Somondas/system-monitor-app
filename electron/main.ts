@@ -5,8 +5,7 @@ import path from "node:path";
 import { ipcMain } from "electron";
 import si from "systeminformation";
 import os from "os";
-import disk from "diskusage";
-
+import fs from "fs";
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -81,7 +80,22 @@ ipcMain.handle("get-disk-info", async () => {
     return { error: true };
   }
 });
+ipcMain.handle("get-folder-file-counts", async () => {
+  const baseDir = path.join(os.homedir());
+  const folders = ["Downloads", "Documents", "Pictures", "Music"];
 
+  const counts = {};
+  for (const folder of folders) {
+    const fullPath = path.join(baseDir, folder);
+    try {
+      const files = fs.readdirSync(fullPath, { withFileTypes: true });
+      counts[folder] = files.filter((f) => f.isFile()).length;
+    } catch (error) {
+      counts[folder] = 0;
+    }
+  }
+  return counts;
+});
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
