@@ -17403,6 +17403,27 @@ function createWindow() {
     win.loadFile(path$3.join(RENDERER_DIST, "index.html"));
   }
 }
+ipcMain.handle("get-system-info", async () => {
+  try {
+    const osInfo2 = await si.osInfo();
+    const cpu2 = await si.cpu();
+    const mem2 = await si.mem();
+    const graphics2 = await si.graphics();
+    return {
+      os: `${osInfo2.distro} ${osInfo2.release} (${osInfo2.arch})`,
+      linuxKernel: osInfo2.kernel || "N/A",
+      cinnamonVersion: osInfo2.codename,
+      cpu: `${cpu2.manufacturer} ${cpu2.brand} (${cpu2.speed} GHz)`,
+      cores: cpu2.cores,
+      totalMem: mem2.total,
+      // in GB
+      graphics: graphics2.controllers.length > 0 ? graphics2.controllers[0].model : "No GPU found"
+    };
+  } catch (err) {
+    console.error("System info error:", err);
+    return null;
+  }
+});
 ipcMain.handle("get-system-stats", async () => {
   const cpu2 = await si.currentLoad();
   const mem2 = await si.mem();
